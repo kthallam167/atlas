@@ -1,0 +1,28 @@
+# Build
+build/
+*.o
+*.so
+*.a
+*.dylib
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+
+# Data & index artifacts
+data/*.tsv
+data/*.xml
+data/*.gz
+data/*.log
+index/
+index_wiki/
+index_en/
+*.idx
+data/*.sh
+
+# Editor / OS
+.DS_Store
+.vscode/
+compile_commands.json
