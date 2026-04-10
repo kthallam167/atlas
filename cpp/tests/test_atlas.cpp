@@ -1,4 +1,5 @@
 // Minimal self-contained test suite for the atlas core.
+#include "atlas/index_builder.hpp"
 #include "atlas/tokenizer.hpp"
 #include "atlas/varbyte.hpp"
 #include <cstdio>
@@ -24,8 +25,14 @@ static void test_tokenizer() {
     CHECK(toks == (std::vector<std::string>{"hello", "world", "123", "testing"}));
 }
 
+static void test_builder() {
+    atlas::BuildStats st;
+    CHECK(st.num_docs == 0);
+}
+
 int main() {
     test_varbyte();
     test_tokenizer();
+    test_builder();
     return g_failures ? 1 : 0;
 }
