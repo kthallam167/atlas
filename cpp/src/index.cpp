@@ -48,36 +48,49 @@ Mmap& Mmap::operator=(Mmap&& o) noexcept {
 
 PostingsIterator::PostingsIterator(const uint8_t* block, uint32_t block_len, uint32_t doc_freq)
     : doc_freq_(doc_freq) {
-    if (!block || block_len == 0) { cur_doc_ = kNoDoc; return; }
     size_t p = 0;
-    const uint64_t nskips = vbyte_decode(block, p);
-    for (uint64_t i = 0; i < nskips; ++i) {
-        const uint32_t sdoc = static_cast<uint32_t>(vbyte_decode(block, p));
-        const uint64_t soff = vbyte_decode(block, p);
-        skips_.emplace_back(sdoc, soff);
+    const uint64_t num_skips = vbyte_decode(block, p);
+    skips_.reserve(num_skips);
+    for (uint64_t i = 0; i < num_skips; ++i) {
+        const uint32_t docid = static_cast<uint32_t>(vbyte_decode(block, p));
+        const uint64_t off = vbyte_decode(block, p);
+        skips_.emplace_back(docid, off);
     }
     region_ = block + p;
-    region_len_ = block_len - p;
-    next();
+    region_size_ = block_len - p;
+    cur_pos_ = 0;
+    cur_doc_ = 0;
+    decode_current();
 }
 
 void PostingsIterator::decode_current() {
-    if (cur_pos_ >= region_len_) { cur_doc_ = kNoDoc; return; }
-    size_t p = cur_pos_;
-    cur_doc_ += static_cast<uint32_t>(vbyte_decode(region_, p));
-    cur_tf_ = static_cast<uint32_t>(vbyte_decode(region_, p));
-    pos_start_ = p;
-    for (uint32_t j = 0; j < cur_tf_; ++j) vbyte_decode(region_, p);
-    next_pos_ = p;
+    if (cur_pos_ >= region_size_) { cur_doc_ = kNoDoc; return; }
+    cur_doc_ += static_cast<uint32_t>(vbyte_decode(region_, cur_pos_));
+    cur_tf_ = static_cast<uint32_t>(vbyte_decode(region_, cur_pos_));
+    pos_start_ = cur_pos_;  // cur_pos_ stays here; next() skips the positions
 }
 
 void PostingsIterator::next() {
-    if (cur_doc_ == kNoDoc) return;
-    cur_pos_ = next_pos_;
+    if (at_end()) return;
+    size_t p = pos_start_;
+    for (uint32_t j = 0; j < cur_tf_; ++j) vbyte_decode(region_, p);
+    cur_pos_ = p;
     decode_current();
 }
 
 void PostingsIterator::advance(uint32_t target) {
+    if (at_end() || cur_doc_ >= target) return;
+
+    // Leap to the furthest checkpoint before `target` that is ahead of us.
+    for (const auto& s : skips_) {
+        if (s.first < target && s.second > cur_pos_) {
+            cur_doc_ = s.first;
+            cur_pos_ = s.second;
+            decode_current();
+        } else if (s.first >= target) {
+            break;  // skips are sorted; no closer checkpoint exists
+        }
+    }
     while (!at_end() && cur_doc_ < target) next();
 }
 
@@ -125,7 +138,8 @@ const TermEntry* Index::find_term(const std::string& term) const {
     while (lo <= hi) {
         const int64_t mid = (lo + hi) / 2;
         const TermEntry& e = entries[mid];
-        const int cmp = term.compare(0, term.size(), strs + e.str_offset, e.str_len);
+        const int cmp = term.compare(0, term.size(),
+                                     strs + e.str_offset, e.str_len);
         if (cmp == 0) return &e;
         if (cmp < 0) hi = mid - 1;
         else lo = mid + 1;
