@@ -1,4 +1,5 @@
 // Minimal self-contained test suite for the atlas core.
+#include "atlas/index.hpp"
 #include "atlas/index_builder.hpp"
 #include "atlas/tokenizer.hpp"
 #include "atlas/varbyte.hpp"
