@@ -1,5 +1,6 @@
 #include "atlas/searcher.hpp"
 #include <algorithm>
+#include <cmath>
 
 namespace atlas {
 
@@ -17,9 +18,7 @@ std::vector<SearchResult> Searcher::search(const std::string& query, size_t k) c
 }
 
 std::vector<uint32_t> Searcher::evaluate(const QueryNode& node) const {
-    if (node.type == NodeType::Term) {
-        return term_docs(node.term);
-    }
+    if (node.type == NodeType::Term) return term_docs(node.term);
     return {};
 }
 
