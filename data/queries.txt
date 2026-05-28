@@ -1,0 +1,8 @@
+search engine
+index AND query
+vector OR matrix
+boolean NOT phrase
+"neural network"
+algorithm data structure
+search OR retrieval
+ranking
