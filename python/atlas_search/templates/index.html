@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>atlas · full-text search</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body>
+  <main>
+    <header>
+      <h1>atlas</h1>
+      <p class="tagline">
+        C++ full-text search over {{ "{:,}".format(num_docs) }} documents —
+        inverted index, BM25 ranking, phrase &amp; boolean queries.
+      </p>
+    </header>
+
+    <form id="search-form" autocomplete="off">
+      <input id="q" name="q" type="text" placeholder="Try:  brown AND fox,  &quot;quick brown&quot;,  cats OR dogs NOT lazy" autofocus />
+      <button type="submit">Search</button>
+    </form>
+
+    <p class="syntax">
+      <strong>Syntax:</strong>
+      <code>AND</code> <code>OR</code> <code>NOT</code> ·
+      quote for phrases <code>"exact order"</code> ·
+      group with <code>( )</code> · adjacent words imply AND
+    </p>
+
+    <p id="stats" class="stats"></p>
+    <ol id="results"></ol>
+  </main>
+
+  <footer>Built with a memory-mapped index · queries served by a C++ core via pybind11</footer>
+
+  <script>
+    const form = document.getElementById("search-form");
+    const input = document.getElementById("q");
+    const stats = document.getElementById("stats");
+    const list = document.getElementById("results");
+
+    function escapeHtml(s) {
+      const d = document.createElement("div");
+      d.textContent = s;
+      return d.innerHTML;
+    }
+
+    async function run(query) {
+      const resp = await fetch("/api/search?q=" + encodeURIComponent(query) + "&k=15");
+      const data = await resp.json();
+      stats.textContent = data.count + " result" + (data.count === 1 ? "" : "s") +
+        " · " + data.took_ms.toFixed(2) + " ms";
+      list.innerHTML = "";
+      for (const r of data.results) {
+        const li = document.createElement("li");
+        const title = escapeHtml(r.title || "(untitled)");
+        const link = r.url
+          ? `<a href="${escapeHtml(r.url)}" target="_blank" rel="noopener">${title}</a>`
+          : title;
+        li.innerHTML = `<div class="title">${link}</div>` +
+          `<div class="meta">score ${r.score.toFixed(4)} · doc #${r.docid}</div>`;
+        list.appendChild(li);
+      }
+      if (data.count === 0 && query) {
+        list.innerHTML = "<li class='empty'>No matches.</li>";
+      }
+    }
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const q = input.value.trim();
+      if (q) run(q);
+    });
+  </script>
+</body>
+</html>
