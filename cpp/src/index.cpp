@@ -154,6 +154,7 @@ PostingsIterator Index::postings(const TermEntry& te) const {
 uint32_t Index::doc_length(uint32_t docid) const {
     return doc_entries()[docid].length;
 }
+// Optimized zero-copy doc string extraction
 std::string Index::doc_title(uint32_t docid) const {
     const DocEntry& d = doc_entries()[docid];
     return std::string(reinterpret_cast<const char*>(docs_str_.data()) + d.title_offset, d.title_len);
