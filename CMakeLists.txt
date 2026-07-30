@@ -30,6 +30,7 @@ add_test(NAME atlas_tests COMMAND atlas_tests)
 # Python bindings (optional; enabled by default when pybind11 is available).
 option(ATLAS_BUILD_PYTHON "Build the pybind11 module" ON)
 if(ATLAS_BUILD_PYTHON)
+  set(PYBIND11_FINDPYTHON ON)
   find_package(pybind11 CONFIG QUIET)
   if(pybind11_FOUND)
     pybind11_add_module(atlas_native cpp/bindings/pyatlas.cpp)

@@ -118,11 +118,30 @@ static void test_skips() {
     fs::remove_all(root);
 }
 
+static void test_invalid_queries() {
+    const fs::path root = fs::temp_directory_path() / "atlas_test_invalid";
+    fs::remove_all(root); fs::create_directories(root);
+    const std::string dir = build_fixture(root);
+    atlas::Index index(dir);
+    atlas::Searcher s(index);
+
+    bool caught = false;
+    try {
+        s.search("(quick AND brown", 10);
+    } catch (const std::runtime_error&) {
+        caught = true;
+    }
+    CHECK(caught);
+
+    fs::remove_all(root);
+}
+
 int main() {
     test_varbyte();
     test_tokenizer();
     test_search();
     test_skips();
+    test_invalid_queries();
     if (g_failures == 0) std::printf("all tests passed\n");
     else std::printf("%d checks failed\n", g_failures);
     return g_failures == 0 ? 0 : 1;

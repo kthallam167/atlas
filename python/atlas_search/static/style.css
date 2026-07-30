@@ -83,6 +83,10 @@ button:hover { filter: brightness(1.08); }
   margin: 26px 2px 8px;
   min-height: 18px;
 }
+.stats .error {
+  color: #f87171;
+  font-weight: 500;
+}
 
 #results {
   list-style: none;

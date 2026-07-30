@@ -49,6 +49,11 @@
     async function run(query) {
       const resp = await fetch("/api/search?q=" + encodeURIComponent(query) + "&k=15");
       const data = await resp.json();
+      if (data.error) {
+        stats.innerHTML = `<span class="error">Syntax error: ${escapeHtml(data.error)}</span>`;
+        list.innerHTML = "";
+        return;
+      }
       stats.textContent = data.count + " result" + (data.count === 1 ? "" : "s") +
         " · " + data.took_ms.toFixed(2) + " ms";
       list.innerHTML = "";

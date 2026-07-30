@@ -38,10 +38,15 @@ def search():
     except ValueError:
         k = 10
     if not query:
-        return jsonify({"query": query, "count": 0, "took_ms": 0.0, "results": []})
+        return jsonify({"query": query, "count": 0, "took_ms": 0.0, "results": [], "error": None})
 
     start = time.perf_counter()
-    results = engine.search(query, k)
+    error = None
+    try:
+        results = engine.search(query, k)
+    except RuntimeError as e:
+        results = []
+        error = str(e)
     took_ms = (time.perf_counter() - start) * 1000.0
     return jsonify(
         {
@@ -49,6 +54,7 @@ def search():
             "count": len(results),
             "took_ms": round(took_ms, 3),
             "results": results,
+            "error": error,
         }
     )
 
